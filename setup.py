@@ -1,5 +1,4 @@
 from os.path import dirname, join
-import io
 import re
 
 from setuptools import find_packages, setup
