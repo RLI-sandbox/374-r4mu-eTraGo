@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018  Flensburg University of Applied Sciences,
 # Europa-Universität Flensburg,
 # Centre for Sustainable Energy Systems,
@@ -50,12 +49,19 @@ __copyright__ = (
 __license__ = "GNU Affero General Public License Version 3 (AGPL-3.0)"
 __author__ = "ulfmueller, mariusves, pieterhexen, ClaraBuettner"
 
+from contextlib import contextmanager
 from importlib import import_module
 import os
+import subprocess
+import time
 
+from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine
 import numpy as np
 import pandas as pd
 import pypsa
+
+from etrago.config.config import settings
 
 if "READTHEDOCS" not in os.environ:
     import logging
@@ -1008,6 +1014,69 @@ def add_ch4_h2_correspondence(self):
     )
     self.ch4_h2_mapping.index.name = "CH4_bus"
     self.ch4_h2_mapping = self.ch4_h2_mapping.astype(str)
+
+
+@contextmanager
+def sshtunnel(server: str):
+    ssh_config = settings["ssh-tunnel"][server]
+
+    if ssh_config is None:
+        raise ValueError("Missing ssh config.")
+
+    try:
+        logger.info("Open ssh tunnel.")
+        proc = subprocess.Popen(
+            [
+                "ssh",
+                "-N",
+                "-L",
+                f"{ssh_config['LOCAL_PORT']}"
+                f":{ssh_config['LOCAL_ADDRESS']}"
+                f":{ssh_config['REMOTE_PORT']}",
+                f"{ssh_config['USER']}@{ssh_config['HOST']}",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        time.sleep(3)
+        yield proc
+    finally:
+        logger.info("Closing ssh tunnel.")
+
+        proc.kill()
+        time.sleep(3)
+        outs, errs = proc.communicate()
+
+        logger.info(
+            f"SSH process output {outs.decode('utf-8')}, "
+            f"{errs.decode('utf-8')}"
+        )
+
+
+def engine(db: str) -> Engine:
+    """
+    Engine for local database.
+
+    Parameters
+    ----------
+    db : str
+        Database name. Configuration settings must be set within
+        etrago/config/settings.toml or preferably etrago/config/.secrets.toml
+
+    Returns
+    -------
+    sqlalchemy.engine.base.Engine
+        Database engine
+
+    """
+    cred = settings["database"][db]
+
+    return create_engine(
+        f"postgresql+psycopg2://{cred['POSTGRES_USER']}:"
+        f"{cred['POSTGRES_PASSWORD']}@{cred['HOST']}:"
+        f"{cred['PORT']}/{cred['POSTGRES_DB']}",
+        echo=False,
+    )
 
 
 if __name__ == "__main__":

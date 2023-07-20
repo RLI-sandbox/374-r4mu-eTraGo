@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2023  Flensburg University of Applied Sciences,
 # Europa-Universität Flensburg,
 # Centre for Sustainable Energy Systems,
@@ -324,7 +323,7 @@ class Etrago:
 
         self.decommissioning()
 
-        self.add_ch4_h2_correspondence()
+        # self.add_ch4_h2_correspondence()
 
         logger.info("Imported network from db")
 

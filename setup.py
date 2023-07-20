@@ -47,6 +47,8 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "dill",
+        "dynaconf",
         "egoio == 0.4.7",
         "geoalchemy2 >= 0.3.0",
         "geopandas",

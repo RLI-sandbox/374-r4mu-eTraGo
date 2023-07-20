@@ -1,0 +1,3 @@
+[parameters]
+server = "ws02" # ws02 or hetzner
+from_pkl = false
